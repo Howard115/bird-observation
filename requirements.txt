@@ -4,3 +4,4 @@ ebird-api
 selenium
 pandas
 requests
+pydantic-settings
