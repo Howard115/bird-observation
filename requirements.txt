@@ -1,0 +1,6 @@
+streamlit
+streamlit-js-eval
+ebird-api
+selenium
+pandas
+requests
