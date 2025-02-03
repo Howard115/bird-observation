@@ -1,6 +1,6 @@
 streamlit
 ebird-api
-selenium
+beautifulsoup4
 pandas
 requests
 python-dotenv

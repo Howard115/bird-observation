@@ -1,11 +1,11 @@
 import streamlit as st
 import pandas as pd
-from fetch_img import initialize_browser, fetch_img
 from get_user_location import get_user_location
 from ebird.api import get_nearby_observations
 from urllib.parse import quote
 from dotenv import load_dotenv
 import os
+from fetch_img import fetch_img
 
 load_dotenv()
 
@@ -39,8 +39,7 @@ def load_data():
 st.title('Bird Observation Analysis')
 
 # Initialize session state variables
-if not all(key in st.session_state for key in ['browser_driver', 'df', 'location_summary']):
-    st.session_state.browser_driver = initialize_browser()
+if not all(key in st.session_state for key in ['df', 'location_summary']):
     st.session_state.df, st.session_state.location_summary = load_data()
 
 st.subheader('Species Present at Each Location')
@@ -89,10 +88,7 @@ for _, row in st.session_state.location_summary.iterrows():
                     if st.session_state[img_key] is None:
                         if st.button(f"Load image for {species}", key=f"btn_{species_code}"):
                             try:
-                                st.session_state[img_key] = fetch_img(
-                                    st.session_state.browser_driver, 
-                                    species_code
-                                )
+                                st.session_state[img_key] = fetch_img(species_code)
                             except Exception as e:
                                 st.session_state[img_key] = f"Error: {str(e)}"
                     

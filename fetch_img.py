@@ -1,32 +1,31 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
 import requests
+from bs4 import BeautifulSoup
 import streamlit as st
 
-def initialize_browser():
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    driver = webdriver.Chrome(options=options)
-    return driver
-
-def close_browser(driver):
-    driver.quit()
-
 @st.cache_data
-def fetch_img(_driver, species_code="manher1"):
+def fetch_img(species_code="manher1"):
     url = f"https://ebird.org/species/{species_code}"
-    _driver.get(url)
-    image = _driver.find_element(By.CSS_SELECTOR, 'div.Media-content img')
-    img_url = image.get_attribute('src')
-    img_data = requests.get(img_url).content
-
-    return img_data
-#--------------------------------
-if __name__ == "__main__":
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
     
-    driver = initialize_browser()
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        img_element = soup.select_one('div.Media-content img')
+        
+        if img_element and 'src' in img_element.attrs:
+            img_url = img_element['src']
+            img_data = requests.get(img_url).content
+            return img_data
+        else:
+            return None
+            
+    except Exception as e:
+        st.error(f"Error fetching image: {str(e)}")
+        return None
 
-    img_data = fetch_img(driver, "manher1")
-
-    close_browser(driver)    
+if __name__ == "__main__":
+    img_data = fetch_img("manher1")    
