@@ -1,51 +1,46 @@
 import streamlit as st
 import pandas as pd
 from fetch_img import initialize_browser, fetch_img
-from get_observation import get_nearby_bird_observations
+from get_user_location import get_user_location
+from ebird.api import get_nearby_observations
 from urllib.parse import quote
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 
+# Initialize session state for bird observations
+if 'nearby_bird_observations' not in st.session_state:
+    user_location = get_user_location()
+    records = get_nearby_observations(
+        os.getenv('EBIRD_API_KEY'), 
+        user_location['latitude'], 
+        user_location['longitude'], 
+        dist=15, 
+        back=7,
+        locale='zh',
+        hotspot=True,
+        max_results=100
+    )
+    st.session_state['nearby_bird_observations'] = records
 
 # Load and process the data
 
 def load_data():
-    data = get_nearby_bird_observations()
-    if data is None:
-        st.rerun()
-    
-    # Create a list to store flattened observations
-    rows = []
-    for obs in data:
-        row = {
-            'locId': obs['locId'],
-            'locName': obs['locName'],
-            'speciesCode': obs['speciesCode'],
-            'comName': obs['comName'],
-            'sciName': obs['sciName'],
-            'obsDt': obs['obsDt'],
-            'howMany': obs['howMany']
-        }
-        rows.append(row)
-    
-    df = pd.DataFrame(rows)
-    
-    # Create location summary with species list
-    location_species = df.groupby('locName')['comName'].agg(lambda x: ', '.join(sorted(set(x)))).reset_index()
+    """Load and process bird observation data into DataFrames"""
+    df = pd.DataFrame(st.session_state['nearby_bird_observations'])
+    location_species = df.groupby('locName')['comName'].agg(
+        lambda x: ', '.join(sorted(set(x)))
+    ).reset_index()
     location_species.columns = ['Location', 'Species Present']
-    
     return df, location_species
 
 # Create the Streamlit app
 st.title('Bird Observation Analysis')
 
 # Initialize session state variables
-if 'location_obtained' not in st.session_state:
-    st.session_state.location_obtained = False
-
-if 'browser_driver' not in st.session_state:
+if not all(key in st.session_state for key in ['browser_driver', 'df', 'location_summary']):
     st.session_state.browser_driver = initialize_browser()
-
-if 'df' not in st.session_state:
     st.session_state.df, st.session_state.location_summary = load_data()
 
 st.subheader('Species Present at Each Location')
@@ -94,8 +89,10 @@ for _, row in st.session_state.location_summary.iterrows():
                     if st.session_state[img_key] is None:
                         if st.button(f"Load image for {species}", key=f"btn_{species_code}"):
                             try:
-                                img_data = fetch_img(st.session_state.browser_driver, species_code)
-                                st.session_state[img_key] = img_data
+                                st.session_state[img_key] = fetch_img(
+                                    st.session_state.browser_driver, 
+                                    species_code
+                                )
                             except Exception as e:
                                 st.session_state[img_key] = f"Error: {str(e)}"
                     
@@ -106,8 +103,6 @@ for _, row in st.session_state.location_summary.iterrows():
                         else:
                             st.image(st.session_state[img_key])
         st.divider()  # Add a visual separator between locations
-
-
 
 # Add download button
 csv = st.session_state.location_summary.to_csv(index=False)
