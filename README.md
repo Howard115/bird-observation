@@ -16,8 +16,8 @@ This application provides real-time bird observation data based on your current 
 
 ## Project Structure
 - `app.py`: Main Streamlit application
-- `get_observation.py`: Handles eBird API interactions and location services
-- `fetch_img.py`: Manages bird image fetching using Selenium
+- `get_user_location.py`: Handles browser geolocation services 
+- `fetch_img.py`: Manages bird image fetching from eBird
 
 ## Usage
 
@@ -32,19 +32,20 @@ streamlit run app.py
    - Click on species names to see detailed information and images
    - Use the Google Maps link to plan your birding route
    - Download observation data as CSV
+   - Data limited to recent observations within 15km radius
 
 ## Technical Details
 
 ### Key Components
 - **Streamlit**: Frontend framework
 - **eBird API**: Bird observation data source
-- **Selenium**: Web scraping for bird images
-- **Pandas**: Data manipulation and analysis
-- **Pydantic**: Settings management
+- **BeautifulSoup**: Web scraping for bird images
+- **Streamlit Javascript**: Browser geolocation integration
 
 ### Caching
 - Bird observation data is cached for 24 hours
-- Images are cached in session state for improved performance
+- Images are cached in session state
+- Location data persists through browser refresh
 
 ### Location Services
 - Uses browser geolocation
